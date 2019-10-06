@@ -1,5 +1,5 @@
 # app file
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect, url_for
 from flask_bootstrap import Bootstrap
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField
@@ -8,7 +8,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secretString'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://///Users/koya/Desktop/Projects/studyGroup/studyGroupFlask/database.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://///Users/koya/Desktop/Projects/PythonFlaskWebsite/studyGroupFlask/database.db'
 Bootstrap(app)
 db = SQLAlchemy(app)
 
@@ -36,16 +36,31 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
 	form = LoginForm()
-	if form.validate_on_submit(): # !!! NOT WORKING
 
-		return('<h1>' + form.username.data + ' ' + form.password.data + '</h1>')
+	if form.validate_on_submit():
+	 	existing_user = User.query.filter_by(username=form.username.data).first()
+	 	
+	 	if existing_user: # Checking that user exists
+	 		
+	 		if existing_user.password == form.password.data:
+	 			return('<h1>Welcome {}<h1>'.format(form.username.data))
+	 	
+	 	return('<h1> incorrect username or password</h1>')
+		# return('<h1>' + form.username.data + ' ' + form.password.data + '</h1>')
+	
 	return(render_template('login.html', form=form))
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
 	form = RegisterForm()
+
 	if form.validate_on_submit():
-		return('<h1>' + form.username.data + ' ' + form.email.data + ' ' + form.password.data + '</h1>')
+		new_user = User(username=form.username.data, email=form.email.data, password=form.password.data)
+		db.session.add(new_user)
+		db.session.commit()
+		return("<h1>new user has been created</h1>")
+		# return('<h1>' + form.username.data + ' ' + form.email.data + ' ' + form.password.data + '</h1>')
+	
 	return(render_template('signup.html', form=form))
 
 if __name__ == '__main__':
